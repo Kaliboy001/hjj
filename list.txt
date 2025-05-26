@@ -1,0 +1,48 @@
+# FORMAT: CountryCode,CountryName,CapitalName:Lat:Lon|Province1Name:Lat:Lon|Province2Name:Lat:Lon|...
+# --- MASSIVELY EXPANDED GLOBAL TARGET DATABASE ---
+1,United States,Washington D.C.:38.90:-77.03|California:36.77:-119.41|New York:43.29:-74.21|Texas:31.96:-99.90
+52,Mexico,Mexico City:19.43:-99.13|Jalisco:20.65:-103.34|Nuevo León:25.68:-100.31|Puebla:19.04:-98.20
+93,Afghanistan,Kabul:34.54:69.16|Herat:34.37:62.20|Kandahar:31.62:65.72
+98,Iran,Tehran:35.71:51.40|Mashhad:36.29:59.60|Isfahan:32.65:51.67
+92,Pakistan,Islamabad:33.68:73.04|Karachi:24.86:67.00|Lahore:31.58:74.34
+234,Nigeria,Abuja:9.07:7.49|Lagos:6.52:3.37|Kano:12.00:8.51
+91,India,New Delhi:28.61:77.20|Mumbai:19.07:72.87|Bangalore:12.97:77.59
+34,Spain,Madrid:40.41:-3.70|Catalonia:41.38:2.17|Andalusia:37.38:-5.98
+44,United Kingdom,London:51.50:-0.12|Manchester:53.48:-2.24|Scotland:56.49:-4.20
+49,Germany,Berlin:52.52:13.40|Bavaria:48.79:11.49|Hamburg:53.55:9.99
+33,France,Paris:48.85:2.35|Marseille:43.29:5.36|Lyon:45.76:4.83
+7,Russia,Moscow:55.75:37.61|Saint Petersburg:59.93:30.33|Siberia:61.52:105.31
+86,China,Beijing:39.90:116.40|Shanghai:31.23:121.47|Guangdong:23.37:113.58
+81,Japan,Tokyo:35.67:139.65|Osaka:34.69:135.50|Hokkaido:43.22:142.86
+55,Brazil,Brasília:-15.79:-47.88|São Paulo:-23.55:-46.63|Rio de Janeiro:-22.90:-43.17
+61,Australia,Canberra:-35.28:149.12|Sydney:-33.86:151.20|Melbourne:-37.81:144.96
+1,Canada,Ottawa:45.42:-75.69|Toronto:43.65:-79.38|Vancouver:49.28:-123.12
+39,Italy,Rome:41.90:12.49|Milan:45.46:9.19|Naples:40.85:14.26
+82,South Korea,Seoul:37.56:126.97|Busan:35.17:129.07|Incheon:37.45:126.70
+90,Turkey,Ankara:39.93:32.85|Istanbul:41.00:28.97|Izmir:38.42:27.14
+31,Netherlands,Amsterdam:52.36:4.90|Rotterdam:51.92:4.47|The Hague:52.07:4.30
+48,Poland,Warsaw:51.22:21.01|Kraków:50.06:19.94|Gdańsk:54.35:18.64
+62,Indonesia,Jakarta:-6.20:106.84|Surabaya:-7.25:112.75|Bandung:-6.91:107.61
+27,South Africa,Pretoria:-25.74:28.18|Cape Town:-33.92:18.42|Johannesburg:-26.20:28.04
+20,Egypt,Cairo:30.04:31.23|Alexandria:31.20:29.91|Giza:29.98:31.21
+54,Argentina,Buenos Aires:-34.60:-58.38|Cordoba:-31.42:-64.18|Rosario:-32.94:-60.63
+58,Venezuela,Caracas:10.48:-66.90|Maracaibo:10.64:-71.64|Valencia:10.16:-68.00
+46,Sweden,Stockholm:59.32:18.06|Gothenburg:57.70:11.97|Malmö:55.60:13.00
+41,Switzerland,Bern:46.94:7.44|Zürich:47.37:8.54|Geneva:46.20:6.14
+47,Norway,Oslo:59.91:10.75|Bergen:60.39:5.32|Trondheim:63.43:10.39
+63,Philippines,Manila:14.59:120.98|Cebu City:10.31:123.88|Davao City:7.19:125.45
+66,Thailand,Bangkok:13.75:100.50|Chiang Mai:18.78:98.98|Phuket:7.88:98.39
+84,Vietnam,Hanoi:21.02:105.83|Ho Chi Minh City:10.82:106.62|Da Nang:16.05:108.20
+60,Malaysia,Kuala Lumpur:3.13:101.68|Penang:5.41:100.33|Johor Bahru:1.49:103.74
+358,Finland,Helsinki:60.16:24.93|Tampere:61.49:23.76|Turku:60.45:22.26
+30,Greece,Athens:37.98:23.72|Thessaloniki:40.64:22.94|Patras:38.24:21.73
+353,Ireland,Dublin:53.34:-6.26|Cork:51.89:-8.47|Galway:53.27:-9.05
+43,Austria,Vienna:48.20:16.37|Salzburg:47.80:13.05|Innsbruck:47.26:11.40
+32,Belgium,Brussels:50.85:4.35|Antwerp:51.21:4.40|Ghent:51.05:3.71
+351,Portugal,Lisbon:38.72:-9.13|Porto:41.15:-8.61|Faro:37.01:-7.93
+966,Saudi Arabia,Riyadh:24.71:46.67|Jeddah:21.48:39.19|Mecca:21.38:39.85
+971,United Arab Emirates,Abu Dhabi:24.45:54.37|Dubai:25.20:55.27|Sharjah:25.34:55.39
+95,Myanmar,Naypyidaw:19.76:96.07|Yangon:16.86:96.19|Mandalay:21.95:96.08
+880,Bangladesh,Dhaka:23.81:90.41|Chittagong:22.35:91.82|Khulna:22.84:89.56
+57,Colombia,Bogotá:4.71:-74.07|Medellín:6.24:-75.58|Cali:3.45:-76.53
+212,Morocco,Rabat:34.02:-6.84|Casablanca:33.57:-7.58|Marrakesh:31.62:-7.98
