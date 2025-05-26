@@ -24,15 +24,15 @@ API_ID = os.environ.get('API_ID')
 API_HASH = os.environ.get('API_HASH')
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 PROXYCHECK_API_KEY = os.environ.get('PROXYCHECK_API_KEY', '')
-MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://mrshokrullah:L7yjtsOjHzGBhaSR@cluster0.aqxyz.mongodb.net/shahfs?retryWrites=true&w=majority&appName=Cluster')
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://mrshokrullah:L7yjtsOjHzGBhaSR@cluster0.aqxyz.mongodb.net/shmms?retryWrites=true&w=majority&appName=Cluster')
 
 if not all([API_ID, API_HASH, BOT_TOKEN]):
     raise ValueError("Missing required environment variables: API_ID, API_HASH, BOT_TOKEN")
 
 # MongoDB Setup
 mongo_client = MongoClient(MONGO_URI)
-db = mongo_client['bot_databases']
-users_collection = db['userss']
+db = mongo_client['bot_damjtabases']
+users_collection = db['usekrss']
 
 # Channel Configuration
 MANDATORY_CHANNEL = "@shahhaka"
