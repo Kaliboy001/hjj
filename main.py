@@ -7,8 +7,6 @@ import phonenumbers
 import aiofiles
 import socket
 from pymongo import MongoClient
-from collections import OrderedDict
-from datetime import datetime
 from phonenumbers import geocoder, carrier, timezone, phonenumberutil
 from telethon import TelegramClient, events
 from telethon.tl.types import InputGeoPoint, InputMediaGeoPoint
@@ -19,6 +17,7 @@ from telethon.errors import UserNotParticipantError
 from ratelimit import limits, sleep_and_retry
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from typing import Dict
+import uuid
 
 # --- CONFIGURATION ---
 API_ID = os.environ.get('API_ID')
@@ -35,9 +34,9 @@ mongo_client = MongoClient(MONGO_URI)
 db = mongo_client['bot_databases']
 users_collection = db['userss']
 
-# Channel Configuration (Replace with actual channel usernames or IDs)
-MANDATORY_CHANNEL = "@shahhaka"  # Mandatory channel
-OPTIONAL_CHANNEL = "@Channel2"   # Optional channel
+# Channel Configuration
+MANDATORY_CHANNEL = "@shahhaka"
+OPTIONAL_CHANNEL = "@Channel2"
 
 # --- CONSTANTS ---
 IP_PATTERN = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
@@ -141,7 +140,16 @@ LANGUAGES = {
         },
         "map_ip": "`🛰️ Tactical Map Deployed (Precise Coordinates).`",
         "map_phone": "`🛰️ Tactical Map Deployed (Simulated Coordinates).`",
-        "unknown_command": "`>>> Unknown command. Use /start to begin! 🚫`"
+        "unknown_command": "`>>> Unknown command. Use /start or /menu to begin! 🚫`",
+        "insufficient_credits": "🚫 **Insufficient Credits:** You don't have enough credits to process this request.\n"
+                               "You can get more credits by inviting others with your invite link.\n\n"
+                               "**Your Invite Link:** `t.me/{}?start={}`\n"
+                               "**Total Credits:** {}\n"
+                               "**Total Invites:** {}",
+        "invite_notification": "🎉 **New User Invited!**\n"
+                              "User ID: {}\n"
+                              "Total Credits: {}\n"
+                              "Total Invites: {}"
     },
     "fa": {
         "choose_language": "**زبان خود را انتخاب کنید:**",
@@ -200,7 +208,7 @@ LANGUAGES = {
             "timezone": "[-] ⏳ منطقه زمانی: `{}`",
             "connection_type": "[-] 📶 نوع اتصال: `{}`",
             "latitude": "[-] 🌐 عرض جغرافیایی: `{}`",
-            "longitude": "[-] 🌐 طول جghرافیایی: `{}`",
+            "longitude": "[-] 🌐 طول جغرافیایی: `{}`",
             "anonymity": "[-] 🛡️ لایه ناشناسی: `{}`",
             "risk": "[-] 🔥 ارزیابی ریسک: `{}`"
         },
@@ -229,7 +237,16 @@ LANGUAGES = {
         },
         "map_ip": "`🛰️ نقشه تاکتیکی مستقر شد (مختصات دقیق).`",
         "map_phone": "`🛰️ نقشه تاکتیکی مستقر شد (مختصات شبیه‌سازی شده).`",
-        "unknown_command": "`>>> دستور ناشناخته. برای شروع از /start استفاده کنید! 🚫`"
+        "unknown_command": "`>>> دستور ناشناخته. برای شروع از /start یا /menu استفاده کنید! 🚫`",
+        "insufficient_credits": "🚫 **اعتبار ناکافی:** شما اعتبار کافی برای پردازش این درخواست ندارید.\n"
+                               "می‌توانید با دعوت دیگران از طریق لینک دعوت خود اعتبار بیشتری کسب کنید.\n\n"
+                               "**لینک دعوت شما:** `t.me/{}?start={}`\n"
+                               "**کل اعتبار:** {}\n"
+                               "**کل دعوت‌ها:** {}",
+        "invite_notification": "🎉 **کاربر جدید دعوت شد!**\n"
+                              "شناسه کاربر: {}\n"
+                              "کل اعتبار: {}\n"
+                              "کل دعوت‌ها: {}"
     },
     "es": {
         "choose_language": "**Elige tu idioma:**",
@@ -317,7 +334,16 @@ LANGUAGES = {
         },
         "map_ip": "`🛰️ Mapa Táctico Desplegado (Coordenadas Precisas).`",
         "map_phone": "`🛰️ Mapa Táctico Desplegado (Coordenadas Simuladas).`",
-        "unknown_command": "`>>> Comando desconocido. ¡Usa /start para comenzar! 🚫`"
+        "unknown_command": "`>>> Comando desconocido. ¡Usa /start o /menu para comenzar! 🚫`",
+        "insufficient_credits": "🚫 **Créditos Insuficientes:** No tienes suficientes créditos para procesar esta solicitud.\n"
+                               "Puedes obtener más créditos invitando a otros con tu enlace de invitación.\n\n"
+                               "**Tu Enlace de Invitación:** `t.me/{}?start={}`\n"
+                               "**Créditos Totales:** {}\n"
+                               "**Invitaciones Totales:** {}",
+        "invite_notification": "🎉 **¡Nuevo Usuario Invitado!**\n"
+                              "ID de Usuario: {}\n"
+                              "Créditos Totales: {}\n"
+                              "Invitaciones Totales: {}"
     }
 }
 
@@ -395,7 +421,7 @@ async def make_ip_request(http_client: httpx.AsyncClient, url: str) -> Dict:
 
 def get_flag_emoji(country_code):
     if not country_code or len(country_code) != 2:
-        return "🏳️"  # Default flag if code is invalid
+        return "🏳️"
     return chr(ord(country_code[0].upper()) + 127397) + chr(ord(country_code[1].upper()) + 127397)
 
 # --- USER MANAGEMENT ---
@@ -406,9 +432,23 @@ async def get_user_language(user_id):
 async def set_user_language(user_id, language):
     users_collection.update_one(
         {"user_id": user_id},
-        {"$set": {"user_id": user_id, "language": language}},
+        {"$set": {"language": language}},
         upsert=True
     )
+
+async def initialize_user(user_id, referrer_id=None):
+    user = users_collection.find_one({"user_id": user_id})
+    if not user:
+        referral_code = str(uuid.uuid4()).replace("-", "")[:16]
+        users_collection.insert_one({
+            "user_id": user_id,
+            "language": "en",
+            "credits": 1,
+            "referral_code": referral_code,
+            "invites": 0,
+            "referred_by": referrer_id,
+            "active_mode": None
+        })
 
 async def has_joined_mandatory_channel(client, user_id, channel):
     try:
@@ -417,15 +457,91 @@ async def has_joined_mandatory_channel(client, user_id, channel):
     except UserNotParticipantError:
         return False
 
+async def check_credits(user_id):
+    user = users_collection.find_one({"user_id": user_id})
+    return user.get("credits", 0) if user else 0
+
+async def deduct_credit(user_id):
+    users_collection.update_one(
+        {"user_id": user_id},
+        {"$inc": {"credits": -1}}
+    )
+
+async def get_referral_info(user_id):
+    user = users_collection.find_one({"user_id": user_id})
+    return {
+        "referral_code": user.get("referral_code", ""),
+        "credits": user.get("credits", 0),
+        "invites": user.get("invites", 0)
+    }
+
+async def award_referral_credit(referrer_id, invited_user_id):
+    referrer = users_collection.find_one({"user_id": referrer_id})
+    if referrer:
+        users_collection.update_one(
+            {"user_id": referrer_id},
+            {"$inc": {"credits": 1, "invites": 1}}
+        )
+        referrer = users_collection.find_one({"user_id": referrer_id})
+        bot_username = (await client.get_me()).username
+        await client.send_message(
+            referrer_id,
+            LANGUAGES[referrer.get("language", "en")]["invite_notification"].format(
+                invited_user_id, referrer.get("credits", 0), referrer.get("invites", 0)
+            )
+        )
+
+async def show_menu(event, lang):
+    users_collection.update_one(
+        {"user_id": event.sender_id},
+        {"$set": {"active_mode": None}}
+    )
+    await event.reply(
+        LANGUAGES[lang]["menu_message"],
+        buttons=[
+            [Button.inline(LANGUAGES[lang]["search_phone"], b"mode_phone")],
+            [Button.inline(LANGUAGES[lang]["search_ip"], b"mode_ip")]
+        ]
+    )
+
 # --- MAIN TELEGRAM HANDLERS ---
 client = TelegramClient('combined_bot.session', API_ID, API_HASH)
 
-@client.on(events.NewMessage(pattern=r'^/'))
+@client.on(events.NewMessage(pattern=r'^/(start|menu)'))
 async def command_handler(event):
     user_id = event.sender_id
     lang = await get_user_language(user_id)
-    if event.text == '/start':
-        await set_user_language(user_id, "en")  # Reset language on start
+    
+    # Initialize user if not already in database
+    command_args = event.text.split()
+    referrer_id = None
+    if command_args[0] == "/start" and len(command_args) > 1:
+        referral_code = command_args[1]
+        referrer = users_collection.find_one({"referral_code": referral_code})
+        if referrer:
+            referrer_id = referrer["user_id"]
+    await initialize_user(user_id, referrer_id)
+    
+    # Check if user has joined the mandatory channel
+    has_joined = await has_joined_mandatory_channel(client, user_id, MANDATORY_CHANNEL)
+    if not has_joined:
+        await event.reply(
+            LANGUAGES[lang]["mandatory_join"],
+            buttons=[
+                [Button.url(LANGUAGES[lang]["join_channel_1"], f"https://t.me/{MANDATORY_CHANNEL[1:]}")],
+                [Button.url(LANGUAGES[lang]["join_channel_2"], f"https://t.me/{OPTIONAL_CHANNEL[1:]}")],
+                [Button.inline(LANGUAGES[lang]["check_joined"], b"check_joined")]
+            ]
+        )
+        return
+    
+    # Check if user has selected a language (language != "en" indicates selection)
+    user = users_collection.find_one({"user_id": user_id})
+    if user and user.get("language") != "en":
+        # User is initialized and has joined, show menu
+        await show_menu(event, lang)
+    else:
+        # New user, show language selection
         await event.reply(
             LANGUAGES[lang]["choose_language"],
             buttons=[
@@ -434,15 +550,33 @@ async def command_handler(event):
                 [Button.inline(LANGUAGES[lang]["lang_spanish"], b"lang_es")]
             ]
         )
-    else:
+
+@client.on(events.NewMessage(pattern=r'^/'))
+async def other_command_handler(event):
+    user_id = event.sender_id
+    lang = await get_user_language(user_id)
+    
+    # Check if user has joined the mandatory channel
+    has_joined = await has_joined_mandatory_channel(client, user_id, MANDATORY_CHANNEL)
+    if not has_joined:
         await event.reply(
-            LANGUAGES[lang]["unknown_command"],
+            LANGUAGES[lang]["mandatory_join"],
             buttons=[
-                [Button.inline(LANGUAGES[lang]["lang_english"], b"lang_en")],
-                [Button.inline(LANGUAGES[lang]["lang_persian"], b"lang_fa")],
-                [Button.inline(LANGUAGES[lang]["lang_spanish"], b"lang_es")]
+                [Button.url(LANGUAGES[lang]["join_channel_1"], f"https://t.me/{MANDATORY_CHANNEL[1:]}")],
+                [Button.url(LANGUAGES[lang]["join_channel_2"], f"https://t.me/{OPTIONAL_CHANNEL[1:]}")],
+                [Button.inline(LANGUAGES[lang]["check_joined"], b"check_joined")]
             ]
         )
+        return
+    
+    # Handle unknown commands
+    await event.reply(
+        LANGUAGES[lang]["unknown_command"],
+        buttons=[
+            [Button.inline(LANGUAGES[lang]["search_phone"], b"mode_phone")],
+            [Button.inline(LANGUAGES[lang]["search_ip"], b"mode_ip")]
+        ]
+    )
 
 @client.on(events.CallbackQuery)
 async def callback_handler(event):
@@ -450,6 +584,19 @@ async def callback_handler(event):
     lang = await get_user_language(user_id)
     data = event.data.decode()
     msg = await event.get_message()
+
+    # Check if user has joined the mandatory channel
+    has_joined = await has_joined_mandatory_channel(client, user_id, MANDATORY_CHANNEL)
+    if not has_joined:
+        await event.reply(
+            LANGUAGES[lang]["mandatory_join"],
+            buttons=[
+                [Button.url(LANGUAGES[lang]["join_channel_1"], f"https://t.me/{MANDATORY_CHANNEL[1:]}")],
+                [Button.url(LANGUAGES[lang]["join_channel_2"], f"https://t.me/{OPTIONAL_CHANNEL[1:]}")],
+                [Button.inline(LANGUAGES[lang]["check_joined"], b"check_joined")]
+            ]
+        )
+        return
 
     if data.startswith("lang_"):
         selected_lang = data.split("_")[1]
@@ -468,6 +615,10 @@ async def callback_handler(event):
         if not has_joined:
             await event.answer(LANGUAGES[lang]["not_joined_alert"], alert=True)
         else:
+            # Award referral credit if user was referred
+            user = users_collection.find_one({"user_id": user_id})
+            if user.get("referred_by"):
+                await award_referral_credit(user["referred_by"], user_id)
             await event.edit(
                 LANGUAGES[lang]["menu_message"],
                 buttons=[
@@ -482,7 +633,7 @@ async def callback_handler(event):
         )
         await event.edit(
             LANGUAGES[lang]["enter_phone"],
-            buttons=[Button.inline(LANGUAGES[lang]["back_to_menu"], b"back_to_menu_prompt")]
+            buttons=[Button.inline(LANGUAGES[lang]["back_to_menu"], b"back_to_menu")]
         )
     elif data == "mode_ip":
         users_collection.update_one(
@@ -491,40 +642,16 @@ async def callback_handler(event):
         )
         await event.edit(
             LANGUAGES[lang]["enter_ip"],
-            buttons=[Button.inline(LANGUAGES[lang]["back_to_menu"], b"back_to_menu_prompt")]
+            buttons=[Button.inline(LANGUAGES[lang]["back_to_menu"], b"back_to_menu")]
         )
-    elif data == "back_to_menu_prompt":
-        users_collection.update_one(
-            {"user_id": user_id},
-            {"$set": {"active_mode": None}}
-        )
-        await event.edit(
-            LANGUAGES[lang]["menu_message"],
-            buttons=[
-                [Button.inline(LANGUAGES[lang]["search_phone"], b"mode_phone")],
-                [Button.inline(LANGUAGES[lang]["search_ip"], b"mode_ip")]
-            ]
-        )
-    elif data == "back_to_menu_results":
-        users_collection.update_one(
-            {"user_id": user_id},
-            {"$set": {"active_mode": None}}
-        )
-        await event.reply(
-            LANGUAGES[lang]["menu_message"],
-            buttons=[
-                [Button.inline(LANGUAGES[lang]["search_phone"], b"mode_phone")],
-                [Button.inline(LANGUAGES[lang]["search_ip"], b"mode_ip")]
-            ]
-        )
+    elif data == "back_to_menu":
+        await show_menu(event, lang)
 
 @client.on(events.NewMessage)
 async def handle_input(event):
     user_id = event.sender_id
     lang = await get_user_language(user_id)
-    user = users_collection.find_one({"user_id": user_id})
-    active_mode = user.get("active_mode") if user else None
-
+    
     # Check if user has joined the mandatory channel
     has_joined = await has_joined_mandatory_channel(client, user_id, MANDATORY_CHANNEL)
     if not has_joined:
@@ -538,10 +665,13 @@ async def handle_input(event):
         )
         return
 
-    if not active_mode:
-        return  # Ignore messages when no mode is active
-
+    user = users_collection.find_one({"user_id": user_id})
+    active_mode = user.get("active_mode") if user else None
     text = event.text.strip() if event.text else None
+
+    if not active_mode:
+        return
+
     if active_mode == "phone":
         if text:
             try:
@@ -549,6 +679,18 @@ async def handle_input(event):
                 if not phonenumbers.is_valid_number(parsed_number):
                     await event.reply(LANGUAGES[lang]["invalid_phone"])
                     return
+                credits = await check_credits(user_id)
+                if credits < 1:
+                    bot_username = (await client.get_me()).username
+                    referral_info = await get_referral_info(user_id)
+                    await event.reply(
+                        LANGUAGES[lang]["insufficient_credits"].format(
+                            bot_username, referral_info["referral_code"],
+                            referral_info["credits"], referral_info["invites"]
+                        )
+                    )
+                    return
+                await deduct_credit(user_id)
                 await handle_phone_trace(event, text, lang)
             except phonenumbers.phonenumberutil.NumberParseException:
                 await event.reply(LANGUAGES[lang]["invalid_phone"])
@@ -582,7 +724,6 @@ async def handle_ip_lookup(event, ip_address, lang):
                     response = await make_ip_request(http_client, PROXYCHECK_API_URL.format(ip=ip_address))
                     security_data = response.get(ip_address, {'proxy': 'Unknown', 'type': 'Scan Inconclusive', 'risk': 'N/A'})
         await asyncio.sleep(0.5)
-        # Reverse DNS Lookup
         hostname = "N/A"
         try:
             hostname = socket.gethostbyaddr(ip_address)[0]
@@ -615,7 +756,7 @@ async def handle_ip_lookup(event, ip_address, lang):
         lat, lon = ip_data.get('lat'), ip_data.get('lon')
         if lat and lon:
             await client.send_file(event.chat_id, file=InputMediaGeoPoint(InputGeoPoint(lat=lat, long=lon)), caption=LANGUAGES[lang]["map_ip"])
-        await msg.edit(final_report, buttons=[Button.inline(LANGUAGES[lang]["back_to_menu"], b"back_to_menu_results")])
+        await msg.edit(final_report, buttons=[Button.inline(LANGUAGES[lang]["back_to_menu"], b"back_to_menu")])
     except Exception as e:
         await msg.edit(LANGUAGES[lang]["ip_error"].format(f"{e.__class__.__name__}: {e}"))
 
@@ -692,7 +833,7 @@ async def handle_phone_trace(event, phone_number_str, lang):
         else:
             fake_lat, fake_lon = random.uniform(-90, 90), random.uniform(-180, 180)
         await client.send_file(event.chat_id, file=InputMediaGeoPoint(InputGeoPoint(lat=fake_lat, long=fake_lon)), caption=LANGUAGES[lang]["map_phone"])
-        await msg.edit(final_report, buttons=[Button.inline(LANGUAGES[lang]["back_to_menu"], b"back_to_menu_results")])
+        await msg.edit(final_report, buttons=[Button.inline(LANGUAGES[lang]["back_to_menu"], b"back_to_menu")])
     except phonenumbers.phonenumberutil.NumberParseException:
         await msg.edit(LANGUAGES[lang]["phone_parse_error"])
     except Exception as e:
