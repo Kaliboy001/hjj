@@ -337,7 +337,7 @@ LANGUAGES = {
         "ip_report": {
             "target_ip": "[-] 🎯 IP Objetivo: `{}`",
             "hostname": "[-] 🖥️ Nombre del Host: `{}`",
-            "isp "[-] 📡 Proveedor de Servicios de Internet: `{}`",
+            "isp "[-] Proveedor de Servicios de Internet: `{}`",
             "org": "[-] 🏢 Organización: `{}`",
             "asn": "[-] 🌐 ASN: `{}`",
             "location": "[-] 📍 Ubicación: `{}, {} {}`",
