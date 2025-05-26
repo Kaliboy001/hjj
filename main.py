@@ -26,16 +26,16 @@ API_ID = os.environ.get('API_ID')
 API_HASH = os.environ.get('API_HASH')
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 PROXYCHECK_API_KEY = os.environ.get('PROXYCHECK_API_KEY', '')
-MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://mrshokrullah:L7yjtsOjHzGBhaSR@cluster0.aqxyz.mongodb.net/shajyhfs?retryWrites=true&w=majority&appName=Cluster')
-BOT_USERNAME = os.environ.get('BOT_USERNAME', 'YourBotUsername')
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://mrshokrullah:L7yjtsOjHzGBhaSR@cluster0.aqxyz.mongodb.net/shabjchfs?retryWrites=true&w=majority&appName=Cluster')
+BOT_USERNAME = os.environ.get('BOT_USERNAME', 'hsjaiaiajwjqqbot')
 
 if not all([API_ID, API_HASH, BOT_TOKEN]):
     raise ValueError("Missing required environment variables: API_ID, API_HASH, BOT_TOKEN")
 
 # MongoDB Setup
 mongo_client = MongoClient(MONGO_URI)
-db = mongo_client['bot_databnases']
-users_collection = db['usehvgrss']
+db = mongo_client['bot_datambbbases']
+users_collection = db['usehmgrcss']
 
 # Channel Configuration
 MANDATORY_CHANNEL = "@shahhaka"  # Mandatory channel
@@ -167,7 +167,7 @@ LANGUAGES = {
             "risk": "[-] 🔥 Risk Assessment: `{}`"
         },
         "map_ip": "`🛰️ Tactical Map Deployed (Precise Coordinates).`",
-        "map_phone": "`🛰️ Tactical Map Deployed (Simulated Coordinates).`"
+        "map_phone": "`� спут Tactical Map Deployed (Simulated Coordinates).`"
     },
     "fa": {
         "choose_language": "**زبان خود را انتخاب کنید:**",
@@ -337,7 +337,7 @@ LANGUAGES = {
         "ip_report": {
             "target_ip": "[-] 🎯 IP Objetivo: `{}`",
             "hostname": "[-] 🖥️ Nombre del Host: `{}`",
-            "isp "[-] Proveedor de Servicios de Internet: `{}`",
+            "isp": "[-] 📡 Proveedor de Servicios de Internet: `{}`",
             "org": "[-] 🏢 Organización: `{}`",
             "asn": "[-] 🌐 ASN: `{}`",
             "location": "[-] 📍 Ubicación: `{}, {} {}`",
@@ -373,7 +373,7 @@ LANGUAGES = {
             "risk": "[-] 🔥 Evaluación de Riesgo: `{}`"
         },
         "map_ip": "`🛰️ Mapa Táctico Desplegado (Coordenadas Precisas).`",
-        "map_phone": "`� спут Tactical Map Deployed (Simulated Coordinates).`"
+        "map_phone": "`🛰️ Mapa Táctico Desplegado (Coordenadas Simuladas).`"
     }
 }
 
@@ -409,6 +409,8 @@ async def progress_edit(message, text: str, buttons=None) -> None:
         await message.edit(text, parse_mode='md', buttons=buttons)
     except (MessageNotModifiedError, FloodWaitError):
         pass
+    except Exception as e:
+        logger.error(f"Progress edit failed: {e}")
 
 async def line_by_line_edit(message_to_edit, final_text, delay=0.3):
     lines = final_text.split('\n')
@@ -464,9 +466,10 @@ async def get_user_data(user_id):
     return user
 
 async def set_user_language(user_id, language):
+    user_data = await get_user_data(user_id)
     users_collection.update_one(
         {"user_id": user_id},
-        {"$set": {"language": language}},
+        {"$set": {"language": language, "credits": user_data.get("credits", INITIAL_CREDIT), "invites": user_data.get("invites", 0), "inviter_id": user_data.get("inviter_id")}},
         upsert=True
     )
 
@@ -606,27 +609,14 @@ async def callback_handler(event):
         if data.startswith("lang_"):
             selected_lang = data.split("_")[1]
             await set_user_language(user_id, selected_lang)
-            has_joined = await has_joined_mandatory_channel(client, user_id, MANDATORY_CHANNEL)
-            if has_joined:
-                await award_referral_credits(client, user_id, selected_lang)
-                await event.edit(
-                    LANGUAGES[selected_lang]["menu_message"],
-                    buttons=[
-                        [Button.inline(LANGUAGES[selected_lang]["search_phone"], b"mode_phone")],
-                        [Button.inline(LANGUAGES[selected_lang]["search_ip"], b"mode_ip")],
-                        [Button.inline(LANGUAGES[selected_lang]["language_button"], b"change_language"),
-                         Button.inline(LANGUAGES[selected_lang]["account_info_button"], b"account_info")]
-                    ]
-                )
-            else:
-                await event.edit(
-                    LANGUAGES[selected_lang]["mandatory_join"],
-                    buttons=[
-                        [Button.url(LANGUAGES[selected_lang]["join_channel_1"], f"https://t.me/{MANDATORY_CHANNEL[1:]}")],
-                        [Button.url(LANGUAGES[selected_lang]["join_channel_2"], f"https://t.me/{OPTIONAL_CHANNEL[1:]}")],
-                        [Button.inline(LANGUAGES[selected_lang]["check_joined"], b"check_joined")]
-                    ]
-                )
+            await event.edit(
+                LANGUAGES[selected_lang]["choose_language"],
+                buttons=[
+                    [Button.inline(LANGUAGES[selected_lang]["lang_english"], b"lang_en")],
+                    [Button.inline(LANGUAGES[selected_lang]["lang_persian"], b"lang_fa")],
+                    [Button.inline(LANGUAGES[selected_lang]["lang_spanish"], b"lang_es")]
+                ]
+            )
         elif data == "check_joined":
             has_joined = await has_joined_mandatory_channel(client, user_id, MANDATORY_CHANNEL)
             if not has_joined:
