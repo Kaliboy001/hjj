@@ -1,9 +1,11 @@
-phonenumbers
-tgcrypto
 telethon
-aiofiles
 pymongo
 httpx
+phonenumbers
+ratelimit
+tenacity
+aiofiles
 flask
-requests
 aiohttp
+tgcrypto
+requests
